@@ -18,7 +18,6 @@
 	
 	UserDAO userDao = new UserDAO();
 	int result=userDao.login(userID, userPassword);
-	System.out.println("result: "+ result);
 	
 	if(result==1){
 		session.setAttribute("userID", userID);

@@ -8,6 +8,7 @@ SHOW TABLES;
 
 CREATE DATABASE LectureEvaluation;					#데이터베이스 생성
 
+
 USE LectureEvaluation;									#생성한 데이터베이스에 접속
 
 DROP TABLE evaluation;
@@ -32,6 +33,8 @@ CREATE TABLE EVALUATION (
 
 SELECT * FROM evaluation;
 
+DELETE from evaluation;
+
 
 # 회원 테이블
 CREATE TABLE USER (
@@ -51,6 +54,10 @@ CREATE TABLE LIKEY (
   userIP varchar(50) #작성자 아이피
 );
 
+ALTER TABLE likey ADD PRIMARY KEY(userID, evaluationID);
+
+DESC likey;
+
 SELECT * FROM likey;
 
 # 추천순
@@ -61,6 +68,17 @@ LIKE ?
 AND CONCAT(lectureName, professorName, evaluationTitle, evaluationContent) 
 LIKE ? ORDER BY likeCount DESC
 LIMIT " + pageNumber * 5 + ", " + pageNumber * 5 + 6;
+
+
+# 추천순
+SELECT * 
+FROM EVALUATION 
+WHERE lectureDivide 
+LIKE '%전체%' 
+AND CONCAT(lectureName, professorName, evaluationTitle, evaluationContent) 
+LIKE '%컴퓨터%' ORDER BY likeCount DESC
+LIMIT " + pageNumber * 5 + ", " + pageNumber * 5 + 6;
+
 
 # 최신순
 SELECT * 

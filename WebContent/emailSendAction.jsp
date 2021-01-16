@@ -49,7 +49,7 @@
 	+"<br><a href='"+host+"emailCheckAction.jsp?code="	
 	+new SHA256().getSHA256(to)+"'>이메일 인증하기</a>";
 	
-	System.out.println("content:"+ content);
+	/* System.out.println("content:"+ content); */
 	// SMTP(보내는 메일서버)에 접속하기 위한 정보를 기입
 	Properties p=new Properties();
 	p.put("mail.smtp.user", from);

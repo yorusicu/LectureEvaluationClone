@@ -19,18 +19,18 @@ public class EvaluationDAO extends DatabaseUtil {
 		try {
 			String sql = "INSERT INTO EVALUATION VALUES(NULL,?,?,?,?,?,?,?,?,?,?,?,?,0);";
 			pstmt=conn.prepareStatement(sql);
-			pstmt.setString(1, evalDto.getUserID());
-			pstmt.setString(2, evalDto.getLectureName());
-			pstmt.setString(3, evalDto.getProfessorName());
+			pstmt.setString(1, evalDto.getUserID().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(2, evalDto.getLectureName().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(3, evalDto.getProfessorName().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
 			pstmt.setInt(4, evalDto.getLectureYear());
-			pstmt.setString(5, evalDto.getSemesterDivide());
-			pstmt.setString(6, evalDto.getLectureDivide());
-			pstmt.setString(7, evalDto.getEvaluationTitle());
-			pstmt.setString(8, evalDto.getEvaluationContent());
-			pstmt.setString(9, evalDto.getTotalScore());
-			pstmt.setString(10, evalDto.getCreditScore());
-			pstmt.setString(11, evalDto.getComfortableScore());
-			pstmt.setString(12, evalDto.getLectureScore());
+			pstmt.setString(5, evalDto.getSemesterDivide().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(6, evalDto.getLectureDivide().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(7, evalDto.getEvaluationTitle().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(8, evalDto.getEvaluationContent().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(9, evalDto.getTotalScore().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(10, evalDto.getCreditScore().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(11, evalDto.getComfortableScore().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
+			pstmt.setString(12, evalDto.getLectureScore().replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r\n", "<br>"));
 			
 			return pstmt.executeUpdate();
 		} catch (Exception e) {
@@ -57,13 +57,22 @@ public class EvaluationDAO extends DatabaseUtil {
 			
 			try {
 				if (searchType.equals("최신순")) {
-					sql="SELECT * FROM EVALUATION WHERE lectureDivide LIKE ? AND CONCAT(lectureName, "
-							+ "professorName, evaluationTitle, evaluationContent) LIKE ? "
-							+ "ORDER BY evaluationID DESC LIMIT " + pageNumber * 5 + ", " + pageNumber * 5 + 6;
-				}else if(searchType.equals("추천순")) {
-					sql="SELECT * FROM EVALUATION WHERE lectureDivide LIKE ? "
+					sql="SELECT * "
+							+ "FROM EVALUATION "
+							+ "WHERE lectureDivide "
+							+ "LIKE ? "
 							+ "AND CONCAT(lectureName, professorName, evaluationTitle, evaluationContent) "
-							+ "LIKE ? ORDER BY likeCount DESC LIMIT " + pageNumber * 5 + ", " + pageNumber * 5 + 6;
+							+ "LIKE ? "
+							+ "ORDER BY evaluationID DESC "
+							+ "LIMIT " + pageNumber * 5 + ", " + pageNumber * 5 + 6;
+				}else if(searchType.equals("추천순")) {
+					sql="SELECT * "
+							+ "FROM EVALUATION "
+							+ "WHERE lectureDivide "
+							+ "LIKE ? "
+							+ "AND CONCAT(lectureName, professorName, evaluationTitle, evaluationContent) "
+							+ "LIKE ? ORDER BY likeCount DESC "
+							+ "LIMIT " + pageNumber * 5 + ", " + pageNumber * 5 + 6;
 				}
 				pstmt=conn.prepareStatement(sql);
 				pstmt.setString(1, "%"+lectureDivide+"%");
@@ -97,5 +106,64 @@ public class EvaluationDAO extends DatabaseUtil {
 				close(rs);
 			}
 			return list;	// list 반환
+		}
+		
+	// 좋아요 =========================================================================
+		public int like(String evaluationID) {
+			conn=getConnection();
+			PreparedStatement pstmt=null;
+			try {
+				String sql="UPDATE EVALUATION SET likeCount = likeCount + 1 WHERE evaluationID = ?";
+				pstmt=conn.prepareStatement(sql);
+				pstmt.setInt(1, Integer.parseInt(evaluationID));
+				
+				return pstmt.executeUpdate();
+			}catch (Exception e) {
+				e.printStackTrace();
+			}finally {
+				close(conn);
+				close(pstmt);
+			}
+			return -1;
+		}
+		
+	// 삭제하기 =========================================================================
+	public int delete(String evaluationID) {
+		conn=getConnection();
+		PreparedStatement pstmt=null;
+		try {
+			String sql="DELETE FROM EVALUATION WHERE evaluationID = ?";
+			pstmt=conn.prepareStatement(sql);
+			pstmt.setInt(1, Integer.parseInt(evaluationID));
+			
+			return pstmt.executeUpdate();
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally {
+			close(conn);
+			close(pstmt);
+		}
+		return -1;
+	}
+	
+	// 강의 글 작성 유저아이디 불러오기 =========================================================================
+		public String getUserID(String evaluationID) {
+			conn=getConnection();
+			PreparedStatement pstmt=null;
+			try {
+				String sql="SELECT userID FROM EVALUATION WHERE evaluationID = ?";
+				pstmt=conn.prepareStatement(sql);
+				pstmt.setInt(1, Integer.parseInt(evaluationID));
+				rs=pstmt.executeQuery();
+				while(rs.next()) {
+					return rs.getString(1);
+				}
+			}catch (Exception e) {
+				e.printStackTrace();
+			}finally {
+				close(conn);
+				close(pstmt);
+			}
+			return null;	// 존재하지 않는 아이디
 		}
 }

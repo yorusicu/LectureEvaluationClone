@@ -1,3 +1,7 @@
+<%@page import="java.net.URLEncoder"%>
+<%@page import="evaluation.EvaluationDAO"%>
+<%@page import="evaluation.EvaluationDTO"%>
+<%@page import="java.util.ArrayList"%>
 <%@page import="user.UserDAO"%>
 <%@page import="java.io.PrintWriter"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
@@ -23,7 +27,28 @@
 </head>
 <body>
 <%
-System.out.println("index_session: "+session.getAttribute("userID"));
+	request.setCharacterEncoding("UTF-8");
+	String lectureDivide="전체";
+	String searchType="최신순";
+	String search="";
+	int pageNumber=0;
+	if(request.getParameter("lectureDivide")!=null){
+		lectureDivide=request.getParameter("lectureDivide");
+	}
+	if(request.getParameter("searchType")!=null){
+		searchType=request.getParameter("searchType");
+	}
+	if(request.getParameter("search")!=null){
+		search=request.getParameter("search");
+	}
+	if(request.getParameter("pageNumber")!=null){
+		try{
+			pageNumber=Integer.parseInt(request.getParameter("pageNumber"));
+		}catch(Exception e){
+			System.out.println("검색 페이지 번호 오류");
+		}
+	}
+	
 	String userID=null;
 	// userID세션이 있으면 userID변수에 넣음 
 	if(session.getAttribute("userID")!=null){
@@ -73,6 +98,7 @@ System.out.println("index_session: "+session.getAttribute("userID"));
 <%
 	}else{
 %>
+						<a href="#" class="dropdown-item"><%=userID %>님</a>
 						<a class="dropdown-item" href="./userLogout.jsp">로그아웃</a>
 <%
 	}
@@ -82,56 +108,98 @@ System.out.println("index_session: "+session.getAttribute("userID"));
 			</ul>
 			<!-- 상단 검색 부분 -->
 			<form action="./index.jsp" method="get" class="form-inline my-2 my-lg-0">
-				<input type="search" name="search" class="form-control mr-sm-2" placeholder="내용을 입력하세요" >
+				<input type="text" name="search" class="form-control mr-sm-2" placeholder="내용을 입력하세요" >
 				<button class="btn btn-outline-success my-2 my-sm-0" type="submit">검색</button>
 			</form>
 		</div>
 	</nav><!-- // nav 영역 -->
 	<section class="container">
-		<form action="form-inline mt-3" method="get" class="form-inline mt-3">
+		<form action="./index.jsp" method="get" class="form-inline mt-3">
 			<select name="lectureDivide" class="form-control mx-1 mt-2">
 				<option value="전체">전체</option>
-				<option value="전공">전공</option>
-				<option value="교양">교양</option>
-				<option value="기타">기타</option>
+				<option value="전공"<%if(lectureDivide.equals("전공"))	out.println("selected"); %>>전공</option>
+				<option value="교양"<%if(lectureDivide.equals("교양"))	out.println("selected"); %>>교양</option>
+				<option value="기타"<%if(lectureDivide.equals("기타"))	out.println("selected"); %>>기타</option>
 			</select>
-			<input type="text" name="search" class="form-control mx-1 mt-2" placeholder="내용을 입력하세요">
+			<select name="searchType" class="form-control mx-1 mt-2">
+				<option value="최신순">최신순</option>
+				<option value="추천순"<%if(lectureDivide.equals("추천순"))	out.println("selected"); %>>추천순</option>
+			</select>
+			<input type="text" name="search" class="form-control mx-1 mt-2" value="<%=search%>" placeholder="내용을 입력하세요">
 			<button type="submit" class="btn btn-primary mx-1 mt-2">검색</button>
 			<a class="btn btn-primary mx-1 mt-2" data-toggle="modal" href="#registerModal">등록하기</a>
 			<a class="btn btn-danger mx-1 mt-2" data-toggle="modal" href="#reportModal">신고</a>
 		</form>
+<%
+	ArrayList<EvaluationDTO> evalList=new ArrayList<>();
+	evalList=new EvaluationDAO().getList(lectureDivide, searchType, search, pageNumber);
+	if(evalList!=null){
+		for(int i=0; i<evalList.size(); i++){
+			if(i==5)	break;
+			EvaluationDTO eval=evalList.get(i);
+%>
 		<!-- 강의 -->
 		<div class="card bg-light mt-3"><!-- 강의 타이틀 -->
 			<div class="card-header bg-light">
 				<div class="row">
-					<div class="col-8 text-left">컴퓨터 개론&nbsp;<small>나동빈</small></div>
-					<div class="col-4 text-right">종합<span style="color:red;">A</span></div>
+					<div class="col-8 text-left"><%=eval.getLectureName() %>&nbsp;<small><%=eval.getProfessorName() %></small></div>
+					<div class="col-4 text-right">종합<span style="color:red;"><%=eval.getTotalScore() %></span></div>
 				</div>
 			</div><!-- //강의 타이틀 -->
 			<!-- 게시글 1개 영역 -->
 			<div class="card-body">
-				<h5 class="card-title">정말 좋은 강의예요&nbsp;<small>(2017년 가을학기)</small></h5>
-				<p class="card-text">강의 평가 내용을 쓰는 부분입니다 많이들 써주세요</p>
+				<h5 class="card-title">
+				<%=eval.getEvaluationTitle() %>&nbsp;<small>(<%=eval.getLectureYear() %>년<%=eval.getSemesterDivide() %>)</small></h5>
+				<p class="card-text"><%=eval.getEvaluationContent() %></p>
 				<div class="row">
 					<div class="col-9 text-left">
-						성적<span style="color:red;">A</span>
-						널널<span style="color:red;">B</span>
-						강의<span style="color:red;">C</span>
-						<span style="color:green;">(추천: 15★)</span>
+						성적 평가<span style="color:red;"><%=eval.getCreditScore() %>&nbsp;</span>
+						강의 강도<span style="color:red;"><%=eval.getComfortableScore() %>&nbsp;</span>
+						강의 평가<span style="color:red;"><%=eval.getLectureScore() %>&nbsp;</span>
+						<span style="color:green;">(추천: <%=eval.getLikeCount() %>)</span>
 					</div>
 					<div class="col-3 text=right">
-						<a onclick="return confirm('추천하시겠습니까?')" href="./likeAction.jsp?evaluationID=">추천</a>
-						<a onclick="return confirm('삭제하시겠습니까?')" href="./deleteAction.jsp?evaluationID=">삭제</a>
+						<a onclick="return confirm('추천하시겠습니까?')" href="./likeAction.jsp?evaluationID=<%=eval.getEvaluationID()%>">추천</a>&nbsp;&nbsp;
+						<a onclick="return confirm('삭제하시겠습니까?')" href="./deleteAction.jsp?evaluationID=<%=eval.getEvaluationID()%>">삭제</a>
 					</div>
 				</div>
 			</div><!-- //게시글 1개 영역 -->
+<%
+			}	// end for(evalList.size)
+	}	// end if(evalList!=null)
+%>
 		</div><!-- //강의 -->
-		<ul class="pagination justify-content-center mt-3">
+		<ul class="pagination justify-content-center mt-3" style="margin-bottom: 150px;">
 			<li class="page-item">
-				<a class="page-link" href="#">이전</a>
+<%
+		/* System.out.println("index_pageNumber: "+pageNumber); */
+		if(pageNumber < 1 ){
+%>
+				<a class="page-link disabled">이전</a>
+<%
+		}else{	// (pageNumber <=0)
+%>
+				<a class="page-link" href="./index.jsp?lectureDivide=<%=URLEncoder.encode(lectureDivide, "UTF-8")%>
+				&searchType=<%=URLEncoder.encode(searchType,"UTF-8")%>&search=<%=URLEncoder.encode(search,"UTF-8")%>
+				&pageNumber=<%=pageNumber-1%>">이전</a>
+<%
+		}	// end if(pageNumber <=0)
+%>
 			</li>
 			<li class="page-item">
-				<a class="page-link" href="#">다음</a>
+<%
+		if(evalList.size() < 6){
+%>
+				<a class="page-link disabled">다음</a>
+<%
+		}else{	// (evalList.size() < 6)
+%>
+				<a class="page-link" href="./index.jsp?lectureDivide=<%=URLEncoder.encode(lectureDivide, "UTF-8")%>
+				&searchType=<%=URLEncoder.encode(searchType,"UTF-8")%>&search=<%=URLEncoder.encode(search,"UTF-8")%>
+				&pageNumber=<%=pageNumber+1%>">다음</a>
+<%
+		}	// end if(evalList.size() < 6)
+%>
 			</li>
 		</ul>
 		<!-- 등록하기 -->
@@ -146,14 +214,14 @@ System.out.println("index_session: "+session.getAttribute("userID"));
 					</div><!-- //modal-header -->
 					<!-- modal-body -->
 					<div class="modal-body">
-						<form action="./evaluationRegisterAction.jsp" method="post">
+						<form action="./evaluationWriteAction.jsp" method="post">
 							<!-- form-row -->
-							<div class=form-row">
-								<div class="form-group">
+							<div class="form-row">
+								<div class="form-group col-sm-6">
 									<label>강의명</label>
 									<input type="text" name="lectureName" class="form-control" maxlength="20" placeholder="강의명을 입력해주세요">
 								</div>
-								<div class="form-group">
+								<div class="form-group col-sm-6">
 									<label>교수명</label>
 									<input type="text" name="professorName" class="form-control" maxlength="20" placeholder="이름을 입력해주세요">
 								</div>
@@ -232,7 +300,7 @@ System.out.println("index_session: "+session.getAttribute("userID"));
 								</div>
 								<div class="form-group col-sm-3">
 									<label>강의 평가</label>
-									<select name="comfortableScore" class="form-control">
+									<select name="lectureScore" class="form-control">
 										<option value="A" selected>A</option>
 										<option value="B">B</option>
 										<option value="C">C</option>
@@ -243,7 +311,7 @@ System.out.println("index_session: "+session.getAttribute("userID"));
 							</div><!-- //form-row(평가dropdown) -->
 							<div class="modal-footer">
 								<button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
-								<button type="button" class="btn btn-primary">등록하기</button>
+								<button type="submit" class="btn btn-primary">등록하기</button>
 							</div>
 						</form>
 					</div><!-- //modal-body -->
